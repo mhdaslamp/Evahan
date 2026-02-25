@@ -1,4 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Required for Firebase, google_fonts, and all network calls -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Required for image_picker (photo upload in sell flow) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+
     <application
         android:label="evahan"
         android:name="${applicationName}"

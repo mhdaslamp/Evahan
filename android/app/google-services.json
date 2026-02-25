@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1052777881118",
+    "project_id": "evahan-40dcd",
+    "storage_bucket": "evahan-40dcd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052777881118:android:743848a9de48dba5c2980f",
+        "android_client_info": {
+          "package_name": "com.example.evahan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA58kzWnuQFFPasqIycJazw26dwZzXy5eo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

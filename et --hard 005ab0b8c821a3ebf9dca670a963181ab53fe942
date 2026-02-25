@@ -1,0 +1,11 @@
+[33mcommit 005ab0b8c821a3ebf9dca670a963181ab53fe942[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: mhdaslam <mhdaslamktd@gmail.com>
+Date:   Tue Dec 16 23:27:27 2025 +0530
+
+    landing page interface, initial
+
+[33mcommit c1a47144f1c5cda11cace2be2e2b130ced616a64[m
+Author: mhdaslam <mhdaslamktd@gmail.com>
+Date:   Sun Dec 14 23:04:03 2025 +0530
+
+    flutter app initialized
