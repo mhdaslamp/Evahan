@@ -1,16 +1,13 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Stored verification ID for OTP confirmation
   static String? _verificationId;
   static int? _resendToken;
 
-  /// Send OTP to the given phone number (with country code, e.g. "+919876543210")
+  /// Send OTP to the given phone number (e.g. "+919876543210")
   static Future<void> sendOtp({
     required String phoneNumber,
     required void Function(String verificationId) onCodeSent,
@@ -22,7 +19,6 @@ class AuthService {
       timeout: const Duration(seconds: 60),
       forceResendingToken: _resendToken,
       verificationCompleted: (PhoneAuthCredential credential) async {
-        // Auto-retrieval (Android only)
         if (onAutoVerify != null) onAutoVerify(credential);
         await _auth.signInWithCredential(credential);
       },
@@ -32,6 +28,8 @@ class AuthService {
           message = 'Invalid phone number. Please check and retry.';
         } else if (e.code == 'too-many-requests') {
           message = 'Too many requests. Please wait and try again.';
+        } else if (e.code == 'billing-not-enabled') {
+          message = 'SMS not available. Please use a test phone number.';
         }
         onError(message);
       },
@@ -46,10 +44,12 @@ class AuthService {
     );
   }
 
-  /// Verify OTP entered by the user
+  /// Verify the OTP entered by the user
   static Future<AuthResult> verifyOtp(String otp) async {
     if (_verificationId == null) {
-      return AuthResult(success: false, error: 'Session expired. Please request a new OTP.');
+      return AuthResult(
+          success: false,
+          error: 'Session expired. Please request a new OTP.');
     }
     try {
       final credential = PhoneAuthProvider.credential(
@@ -57,26 +57,13 @@ class AuthService {
         smsCode: otp,
       );
       final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user;
-      if (user == null) {
-        return AuthResult(success: false, error: 'Login failed. Please try again.');
+      if (userCredential.user == null) {
+        return AuthResult(
+            success: false, error: 'Login failed. Please try again.');
       }
-
-      // Check if user profile exists in Firestore
-      final doc = await _firestore.collection('users').doc(user.uid).get();
-      final isNewUser = !doc.exists;
-
-      // Create profile for new users
-      if (isNewUser) {
-        await _firestore.collection('users').doc(user.uid).set({
-          'uid': user.uid,
-          'phone': user.phoneNumber,
-          'createdAt': FieldValue.serverTimestamp(),
-          'profileComplete': false,
-        });
-      }
-
-      return AuthResult(success: true, isNewUser: isNewUser);
+      // User record is created by the Node.js backend (/api/auth/login)
+      // No Firestore writes needed here.
+      return AuthResult(success: true);
     } on FirebaseAuthException catch (e) {
       String message = 'Invalid OTP. Please try again.';
       if (e.code == 'invalid-verification-code') {
@@ -86,7 +73,9 @@ class AuthService {
       }
       return AuthResult(success: false, error: message);
     } catch (_) {
-      return AuthResult(success: false, error: 'Something went wrong. Please try again.');
+      return AuthResult(
+          success: false,
+          error: 'Something went wrong. Please try again.');
     }
   }
 
@@ -97,8 +86,7 @@ class AuthService {
 
 class AuthResult {
   final bool success;
-  final bool isNewUser;
   final String? error;
 
-  AuthResult({required this.success, this.isNewUser = false, this.error});
+  AuthResult({required this.success, this.error});
 }

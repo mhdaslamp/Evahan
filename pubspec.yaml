@@ -33,10 +33,9 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # Firebase
+  # Firebase — Auth only (OTP login)
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
-  cloud_firestore: ^5.4.4
 
   # OTP input
   pinput: ^5.0.0
@@ -49,6 +48,12 @@ dependencies:
 
   # File picking (PDF support for battery certificate)
   file_picker: ^8.1.7
+
+  # HTTP client for backend API calls
+  dio: ^5.7.0
+
+  # Secure storage for JWT token
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:

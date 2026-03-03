@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import 'home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -59,22 +61,43 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _verifyOtp() async {
     final otp = _pinController.text.trim();
-    if (otp.length != 4) {
-      _showError('Please enter all 4 digits.');
+    if (otp.length != 6) {
+      _showError('Please enter all 6 digits.');
       return;
     }
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800)); // simulate check
-    if (!mounted) return;
-    setState(() => _isLoading = false);
 
-    // DEV MODE: bypass Firebase auth — any 4-digit OTP is accepted
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (route) => false,
-    );
+    // Step 1: Verify OTP with Firebase
+    final result = await AuthService.verifyOtp(otp);
+    if (!mounted) return;
+
+    if (!result.success) {
+      setState(() => _isLoading = false);
+      _showError(result.error ?? 'OTP verification failed.');
+      return;
+    }
+
+    // Step 2: Get Firebase ID token
+    try {
+      final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
+      if (!mounted) return;
+
+      // Step 3: Exchange Firebase token for backend JWT
+      await ApiService.loginWithFirebaseToken(idToken!);
+      if (!mounted) return;
+
+      // Step 4: Go to home
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showError('Login failed. Please try again.');
+    }
   }
 
   void _showError(String message) {
@@ -100,8 +123,8 @@ class _OtpScreenState extends State<OtpScreen> {
   Widget build(BuildContext context) {
     // Pinput theme
     final defaultPinTheme = PinTheme(
-      width: 72,
-      height: 72,
+      width: 52,
+      height: 58,
       textStyle: GoogleFonts.poppins(
         fontSize: 24,
         fontWeight: FontWeight.w600,
@@ -174,7 +197,7 @@ class _OtpScreenState extends State<OtpScreen> {
               /// OTP INPUT BOXES
               Center(
                 child: Pinput(
-                  length: 4,
+                  length: 6,
                   controller: _pinController,
                   focusNode: _pinFocusNode,
                   defaultPinTheme: defaultPinTheme,

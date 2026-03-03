@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../services/auth_service.dart';
 import 'otp_screen.dart';
 
 class PhoneInputScreen extends StatefulWidget {
@@ -29,16 +30,24 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
     }
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 500)); // simulate loading
-    if (!mounted) return;
-    setState(() => _isLoading = false);
 
-    // DEV MODE: skip Firebase OTP sending, go straight to OTP screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OtpScreen(phoneNumber: '+91$phone'),
-      ),
+    await AuthService.sendOtp(
+      phoneNumber: '+91$phone',
+      onCodeSent: (verificationId) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpScreen(phoneNumber: '+91$phone'),
+          ),
+        );
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        _showError(error);
+      },
     );
   }
 

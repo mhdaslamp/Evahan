@@ -4,7 +4,7 @@ import '../../theme/app_theme.dart';
 import '../../models/listing_draft.dart';
 import 'sell_details_screen.dart';
 
-const _categories = [
+const List<Map<String, Object>> _categories = [
   {'label': 'Cars', 'icon': Icons.directions_car_outlined},
   {'label': 'Bikes', 'icon': Icons.two_wheeler_outlined},
   {'label': 'Scooters', 'icon': Icons.electric_moped_outlined},
@@ -108,7 +108,7 @@ class SellCategoryScreen extends StatelessWidget {
       ),
       itemCount: _categories.length,
       itemBuilder: (context, index) {
-        final cat = _categories[index] as Map<String, Object>;
+        final cat = _categories[index];
         return GestureDetector(
           onTap: () => Navigator.push(
             context,
