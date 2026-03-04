@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../utils/nav_helper.dart';
 import 'chat_window_screen.dart';
 
 final List<Map<String, String>> _dummyChats = List.generate(
@@ -62,13 +63,7 @@ class _ChatsListScreenState extends State<ChatsListScreen>
       ),
       bottomNavigationBar: EvBottomNavBar(
         currentTab: _currentTab,
-        onTap: (tab) {
-          if (tab == NavTab.home) {
-            Navigator.pop(context);
-          } else {
-            setState(() => _currentTab = tab);
-          }
-        },
+        onTap: (tab) => handleNavTap(context, tab, _currentTab),
       ),
     );
   }

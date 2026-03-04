@@ -3,21 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/vehicle_card.dart';
+import '../services/api_service.dart';
+import '../utils/nav_helper.dart';
 import 'search_screen.dart';
 import 'chats_list_screen.dart';
+import 'my_ads_screen.dart';
+import 'profile_screen.dart';
 import 'sell/sell_category_screen.dart';
 
-// Sample dummy data
-final List<Map<String, String>> _dummyListings = [
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1552519507-da3b142148bb?w=400'},
-  {'name': 'Scooter Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400'},
-  {'name': 'Bike Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'},
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400'},
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1617886903355-9354bb57751f?w=400'},
-  {'name': 'Rickshaw Model', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1622185135505-2d795003994a?w=400'},
-  {'name': 'Scooter Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400'},
-  {'name': 'Bike Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'},
-];
+
 
 final List<Map<String, dynamic>> _categories = [
   {'label': 'Cars', 'icon': Icons.directions_car_outlined},
@@ -37,7 +31,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   NavTab _currentTab = NavTab.home;
   String _selectedCity = 'Kerala';
-  int _visibleCount = 8;
+
+  List<dynamic> _listings = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchListings();
+  }
+
+  Future<void> _fetchListings() async {
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final data = await ApiService.getListings();
+      if (mounted) setState(() { _listings = data['listings'] ?? []; _isLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = 'Could not load listings.'; _isLoading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,17 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: EvBottomNavBar(
         currentTab: _currentTab,
-        onTap: (tab) {
-          if (tab == NavTab.chats) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ChatsListScreen()));
-          } else if (tab == NavTab.sell) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const SellCategoryScreen()));
-          } else {
-            setState(() => _currentTab = tab);
-          }
-        },
+        onTap: (tab) => handleNavTap(context, tab, _currentTab),
       ),
     );
   }
@@ -291,48 +294,66 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.68,
-            ),
-            itemCount: _visibleCount.clamp(0, _dummyListings.length),
-            itemBuilder: (context, index) {
-              final item = _dummyListings[index];
-              return VehicleCard(
-                name: item['name']!,
-                price: item['price']!,
-                km: item['km']!,
-                location: item['location']!,
-                imageUrl: item['image']!,
-              );
-            },
-          ),
-        ),
-        if (_visibleCount < _dummyListings.length) ...[
-          const SizedBox(height: 20),
-          Center(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.white,
-                side: const BorderSide(color: AppColors.borderColor),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              ),
-              onPressed: () => setState(() => _visibleCount += 4),
-              child: Text(
-                'Load More',
-                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator(color: AppColors.green)),
+          )
+        else if (_error != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+            child: Center(
+              child: Column(
+                children: [
+                  const Icon(Icons.wifi_off, color: AppColors.grey, size: 40),
+                  const SizedBox(height: 10),
+                  Text(_error!, style: GoogleFonts.poppins(color: AppColors.grey)),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _fetchListings,
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.green,
+                        side: const BorderSide(color: AppColors.green)),
+                    child: Text('Retry', style: GoogleFonts.poppins()),
+                  ),
+                ],
               ),
             ),
+          )
+        else if (_listings.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Text('No listings yet. Be the first to sell!',
+                  style: GoogleFonts.poppins(color: AppColors.grey, fontSize: 13)),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 0.68,
+              ),
+              itemCount: _listings.length,
+              itemBuilder: (context, index) {
+                final item = _listings[index] as Map<String, dynamic>;
+                final photos = item['photoUrls'] as List? ?? [];
+                return VehicleCard(
+                  name: '${item['brand'] ?? ''} ${item['model'] ?? ''}'.trim(),
+                  price: '₹ ${item['price'] ?? ''}',
+                  km: '${item['kmDriven'] ?? '--'} km',
+                  location: item['location'] ?? '',
+                  imageUrl: photos.isNotEmpty ? photos[0] as String : '',
+                );
+              },
+            ),
           ),
-        ],
       ],
     );
   }

@@ -10,13 +10,16 @@ const { uploadToCloudinary } = require('../config/cloudinary');
 const createListing = async (req, res) => {
     const { category, brand, model, year, transmission, location, kmDriven, noOfOwners, adTitle, price } = req.body;
 
-    // Upload photos in parallel
     const photoFiles = req.files?.photos || [];
+    console.log(`📸 Photos received: ${photoFiles.length}`);
+
     const photoUrls = await Promise.all(
-        photoFiles.map((f) => uploadToCloudinary(f.buffer, 'listings', 'image').then((r) => r.secure_url))
+        photoFiles.map((f) => uploadToCloudinary(f.buffer, 'listings', 'image').then((r) => {
+            console.log(`✅ Photo uploaded to Cloudinary: ${r.secure_url}`);
+            return r.secure_url;
+        }))
     );
 
-    // Upload battery cert (PDF or image)
     const certFile = req.files?.cert?.[0];
     let batteryCertUrl = '';
     if (certFile) {
@@ -27,12 +30,7 @@ const createListing = async (req, res) => {
 
     const listing = await Listing.create({
         seller: req.user._id,
-        category,
-        brand,
-        model,
-        year,
-        transmission,
-        location,
+        category, brand, model, year, transmission, location,
         kmDriven: Number(kmDriven),
         noOfOwners: noOfOwners ? Number(noOfOwners) : 1,
         adTitle,
@@ -41,6 +39,7 @@ const createListing = async (req, res) => {
         batteryCertUrl,
     });
 
+    console.log(`✅ Listing saved | id: ${listing._id} | photos: ${photoUrls.length}`);
     res.status(201).json({ listing });
 };
 

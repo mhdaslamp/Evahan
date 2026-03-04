@@ -18,6 +18,9 @@ const login = async (req, res) => {
 
     if (!user) {
         user = await User.create({ firebaseUid: uid, phone });
+        console.log(`✅ New user created in MongoDB: ${phone} (uid: ${uid})`);
+    } else {
+        console.log(`👤 Existing user logged in: ${phone}`);
     }
 
     const token = signToken(user._id);
@@ -39,9 +42,11 @@ const login = async (req, res) => {
  * Update the logged-in user's name / profile pic.
  */
 const updateProfile = async (req, res) => {
-    const { name } = req.body;
+    const { name, email, about } = req.body;
     const update = { profileComplete: true };
-    if (name) update.name = name;
+    if (name !== undefined) update.name = name;
+    if (email !== undefined) update.email = email;
+    if (about !== undefined) update.about = about;
 
     const user = await User.findByIdAndUpdate(req.user._id, update, { new: true });
     res.json({ user });

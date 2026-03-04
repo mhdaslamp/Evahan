@@ -1,28 +1,96 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../models/listing_draft.dart';
+import '../../services/api_service.dart';
 
-class SellPreviewScreen extends StatelessWidget {
+class SellPreviewScreen extends StatefulWidget {
   final ListingDraft draft;
   const SellPreviewScreen({super.key, required this.draft});
 
-  void _onPost(BuildContext context) {
-    // TODO: Connect to Firebase — upload photos, then save listing doc
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Your ad will be posted live when Firebase is connected! 🚀',
-            style: GoogleFonts.poppins()),
-        backgroundColor: AppColors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-    // Pop all sell screens back to home
-    int count = 0;
-    Navigator.popUntil(context, (route) => count++ >= 4);
+  @override
+  State<SellPreviewScreen> createState() => _SellPreviewScreenState();
+}
+
+class _SellPreviewScreenState extends State<SellPreviewScreen> {
+  bool _isPosting = false;
+
+  Future<void> _onPost() async {
+    setState(() => _isPosting = true);
+
+    try {
+      // Build multipart form data
+      final formData = FormData();
+
+      // Text fields
+      formData.fields.addAll([
+        MapEntry('category', widget.draft.category),
+        MapEntry('brand', widget.draft.brand),
+        MapEntry('model', widget.draft.model),
+        MapEntry('year', widget.draft.year),
+        MapEntry('transmission', widget.draft.transmission),
+        MapEntry('location', widget.draft.location),
+        MapEntry('kmDriven', widget.draft.kmDriven),
+        MapEntry('noOfOwners', widget.draft.noOfOwners),
+        MapEntry('adTitle', widget.draft.adTitle),
+        MapEntry('price', widget.draft.price),
+      ]);
+
+      // Vehicle photos
+      for (final path in widget.draft.photoPaths) {
+        formData.files.add(MapEntry(
+          'photos',
+          await MultipartFile.fromFile(path,
+              filename: path.split('/').last),
+        ));
+      }
+
+      // Battery certificate (PDF or image)
+      if (widget.draft.batteryCertPath != null) {
+        final certPath = widget.draft.batteryCertPath!;
+        formData.files.add(MapEntry(
+          'cert',
+          await MultipartFile.fromFile(certPath,
+              filename: certPath.split('/').last),
+        ));
+      }
+
+      await ApiService.postListing(formData);
+
+      if (!mounted) return;
+      setState(() => _isPosting = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🎉 Your ad is now live!',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Pop back to home
+      int count = 0;
+      Navigator.popUntil(context, (route) => count++ >= 4);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isPosting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to post ad. Please try again.',
+              style: GoogleFonts.poppins()),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
   }
 
   @override
@@ -74,7 +142,8 @@ class SellPreviewScreen extends StatelessWidget {
                 children: List.generate(
                   3,
                   (i) => Container(
-                    width: 22, height: 2.5,
+                    width: 22,
+                    height: 2.5,
                     margin: const EdgeInsets.symmetric(vertical: 2),
                     decoration: BoxDecoration(
                         color: AppColors.white,
@@ -89,13 +158,16 @@ class SellPreviewScreen extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
+                child:
+                    const Icon(Icons.arrow_back, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
               Text(
                 'Preview',
                 style: GoogleFonts.poppins(
-                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -112,17 +184,22 @@ class SellPreviewScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Photo carousel or placeholder
-          draft.photoPaths.isNotEmpty
+          widget.draft.photoPaths.isNotEmpty
               ? SizedBox(
                   height: 220,
                   child: PageView.builder(
-                    itemCount: draft.photoPaths.length,
+                    itemCount: widget.draft.photoPaths.length,
                     itemBuilder: (context, i) => ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.file(
-                        File(draft.photoPaths[i]),
+                        File(widget.draft.photoPaths[i]),
                         fit: BoxFit.cover,
                         width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.black12,
+                          child: const Icon(Icons.broken_image,
+                              color: Colors.black38, size: 48),
+                        ),
                       ),
                     ),
                   ),
@@ -141,52 +218,62 @@ class SellPreviewScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Price & title
           Text(
-            draft.price.isNotEmpty ? '₹ ${draft.price}' : '₹ --',
+            widget.draft.price.isNotEmpty ? '₹ ${widget.draft.price}' : '₹ --',
             style: GoogleFonts.poppins(
-                color: Colors.black87, fontSize: 22, fontWeight: FontWeight.w700),
+                color: Colors.black87,
+                fontSize: 22,
+                fontWeight: FontWeight.w700),
           ),
           Text(
-            draft.adTitle.isNotEmpty ? draft.adTitle : 'No title',
+            widget.draft.adTitle.isNotEmpty ? widget.draft.adTitle : 'No title',
             style: GoogleFonts.poppins(
-                color: Colors.black87, fontSize: 15, fontWeight: FontWeight.w500),
+                color: Colors.black87,
+                fontSize: 15,
+                fontWeight: FontWeight.w500),
           ),
 
           const SizedBox(height: 16),
           const Divider(color: Colors.black12),
           const SizedBox(height: 12),
 
-          // Details rows
-          _detailRow('Category', draft.category),
-          _detailRow('Brand', draft.brand),
-          _detailRow('Model', draft.model),
-          _detailRow('Year', draft.year),
-          _detailRow('Transmission', draft.transmission),
-          _detailRow('KM Driven', draft.kmDriven),
-          _detailRow('No. of Owners', draft.noOfOwners),
+          _detailRow('Category', widget.draft.category),
+          _detailRow('Brand', widget.draft.brand),
+          _detailRow('Model', widget.draft.model),
+          _detailRow('Year', widget.draft.year),
+          _detailRow('Transmission', widget.draft.transmission),
+          _detailRow('KM Driven', widget.draft.kmDriven),
+          _detailRow('No. of Owners', widget.draft.noOfOwners),
 
-          if (draft.location.isNotEmpty) ...[
+          if (widget.draft.location.isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.location_on_outlined, size: 16, color: Colors.black45),
+                const Icon(Icons.location_on_outlined,
+                    size: 16, color: Colors.black45),
                 const SizedBox(width: 4),
-                Text(draft.location, style: GoogleFonts.poppins(color: Colors.black54, fontSize: 13)),
+                Text(widget.draft.location,
+                    style: GoogleFonts.poppins(
+                        color: Colors.black54, fontSize: 13)),
               ],
             ),
           ],
 
-          const SizedBox(height: 12),
-          if (draft.batteryCertPath != null) ...[
-            const Divider(color: Colors.black12),
+          if (widget.draft.batteryCertPath != null) ...[
             const SizedBox(height: 12),
-            Text('Battery Certificate',
-                style: GoogleFonts.poppins(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.file(File(draft.batteryCertPath!), height: 100, fit: BoxFit.cover),
+            const Divider(color: Colors.black12),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.verified_outlined,
+                    size: 16, color: Colors.green),
+                const SizedBox(width: 6),
+                Text('Battery Certificate attached',
+                    style: GoogleFonts.poppins(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500)),
+              ],
             ),
           ],
           const SizedBox(height: 20),
@@ -204,12 +291,15 @@ class SellPreviewScreen extends StatelessWidget {
           SizedBox(
             width: 120,
             child: Text(label,
-                style: GoogleFonts.poppins(color: Colors.black45, fontSize: 13)),
+                style: GoogleFonts.poppins(
+                    color: Colors.black45, fontSize: 13)),
           ),
           Expanded(
             child: Text(value,
                 style: GoogleFonts.poppins(
-                    color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500)),
+                    color: Colors.black87,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -219,40 +309,48 @@ class SellPreviewScreen extends StatelessWidget {
   Widget _buildBottomBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.black12, width: 1)),
       ),
       child: Row(
         children: [
-          // Edit
           Expanded(
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black87,
                 side: const BorderSide(color: Colors.black38),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _isPosting ? null : () => Navigator.pop(context),
               child: Text('Edit',
-                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500)),
+                  style: GoogleFonts.poppins(
+                      fontSize: 15, fontWeight: FontWeight.w500)),
             ),
           ),
           const SizedBox(width: 12),
-          // Post
           Expanded(
             flex: 2,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.green,
                 foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              onPressed: () => _onPost(context),
-              child: Text('Post',
-                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+              onPressed: _isPosting ? null : _onPost,
+              child: _isPosting
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          color: Colors.black, strokeWidth: 2.5))
+                  : Text('Post Ad',
+                      style: GoogleFonts.poppins(
+                          fontSize: 15, fontWeight: FontWeight.w600)),
             ),
           ),
         ],

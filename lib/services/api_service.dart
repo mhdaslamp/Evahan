@@ -53,6 +53,21 @@ class ApiService {
     return res.data as Map<String, dynamic>;
   }
 
+  static Future<Map<String, dynamic>> updateProfile({
+    String? name,
+    String? email,
+    String? about,
+  }) async {
+    final token = await getToken();
+    final dio = _buildDio(token: token);
+    final res = await dio.put('/auth/profile', data: {
+      if (name != null) 'name': name,
+      if (email != null) 'email': email,
+      if (about != null) 'about': about,
+    });
+    return res.data as Map<String, dynamic>;
+  }
+
   // ── Listings ─────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> getListings({
