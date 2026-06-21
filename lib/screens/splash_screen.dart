@@ -41,10 +41,15 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate after 2.5s
     Timer(const Duration(milliseconds: 2500), () async {
       if (mounted) {
-        final token = await ApiService.getToken();
-        final Widget nextScreen = (token != null && token.trim().isNotEmpty)
-            ? const HomeScreen()
-            : const LandingPage();
+        Widget nextScreen = const LandingPage();
+        try {
+          final token = await ApiService.getToken();
+          if (token != null && token.trim().isNotEmpty) {
+            nextScreen = const HomeScreen();
+          }
+        } catch (e) {
+          debugPrint('Error getting token on splash: $e');
+        }
 
         if (mounted) {
           Navigator.of(context).pushReplacement(
