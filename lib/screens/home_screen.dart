@@ -6,10 +6,7 @@ import '../widgets/vehicle_card.dart';
 import '../services/api_service.dart';
 import '../utils/nav_helper.dart';
 import 'search_screen.dart';
-import 'chats_list_screen.dart';
-import 'my_ads_screen.dart';
-import 'profile_screen.dart';
-import 'sell/sell_category_screen.dart';
+import 'vehicle_detail_screen.dart';
 
 
 
@@ -30,7 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   NavTab _currentTab = NavTab.home;
-  String _selectedCity = 'Kerala';
+  String _selectedCity = 'All Kerala';
 
   List<dynamic> _listings = [];
   bool _isLoading = true;
@@ -39,16 +36,40 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCachedListings();
     _fetchListings();
   }
 
+  Future<void> _loadCachedListings() async {
+    final cached = await ApiService.getCachedListings();
+    if (cached != null && mounted && _listings.isEmpty) {
+      setState(() {
+        _listings = cached['listings'] ?? [];
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _fetchListings() async {
-    setState(() { _isLoading = true; _error = null; });
+    if (_listings.isEmpty) {
+      setState(() { _isLoading = true; _error = null; });
+    }
     try {
       final data = await ApiService.getListings();
-      if (mounted) setState(() { _listings = data['listings'] ?? []; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _listings = data['listings'] ?? [];
+          _isLoading = false;
+          _error = null;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _error = 'Could not load listings.'; _isLoading = false; });
+      if (mounted && _listings.isEmpty) {
+        setState(() {
+          _error = 'Could not load listings.';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -90,54 +111,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // EVAHAN Logo
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'EV',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.green,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                  ),
-                ),
-                TextSpan(
-                  text: 'AHAN',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Hamburger
-          GestureDetector(
-            onTap: () {},
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                3,
-                (i) => Container(
-                  width: 22,
-                  height: 2.5,
-                  margin: const EdgeInsets.symmetric(vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
+          // EVahan Logo image
+          Image.asset(
+            'assets/images/evahan_logo.png',
+            height: 24,
+            fit: BoxFit.contain,
           ),
         ],
       ),
@@ -152,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const Icon(Icons.location_on, color: AppColors.green, size: 18),
           const SizedBox(width: 4),
           GestureDetector(
-            onTap: () {},
+            onTap: _showCityPicker,
             child: Row(
               children: [
                 Text(
@@ -167,6 +148,90 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showCityPicker() {
+    const cities = [
+      'All Kerala',
+      'Thiruvananthapuram',
+      'Kochi',
+      'Kozhikode',
+      'Thrissur',
+      'Kannur',
+      'Kollam',
+      'Palakkad',
+      'Malappuram',
+      'Alappuzha',
+      'Kottayam',
+      'Idukki',
+      'Ernakulam',
+      'Kasaragod',
+      'Wayanad',
+      'Pathanamthitta',
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.grey,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Select Location',
+              style: GoogleFonts.poppins(
+                color: AppColors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: cities.length,
+              itemBuilder: (_, i) => ListTile(
+                leading: Icon(
+                  cities[i] == _selectedCity
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: AppColors.green,
+                  size: 20,
+                ),
+                title: Text(
+                  cities[i],
+                  style: GoogleFonts.poppins(
+                    color: AppColors.white,
+                    fontSize: 14,
+                    fontWeight: cities[i] == _selectedCity
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                  ),
+                ),
+                onTap: () {
+                  setState(() => _selectedCity = cities[i]);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -239,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => SearchScreen(initialQuery: cat['label'] as String),
+                    builder: (_) => SearchScreen(initialCategory: cat['label'] as String),
                   ),
                 ),
                 child: Container(
@@ -350,6 +415,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   km: '${item['kmDriven'] ?? '--'} km',
                   location: item['location'] ?? '',
                   imageUrl: photos.isNotEmpty ? photos[0] as String : '',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VehicleDetailScreen(listingId: item['_id'] as String),
+                      ),
+                    );
+                  },
                 );
               },
             ),

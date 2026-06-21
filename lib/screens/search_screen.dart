@@ -1,27 +1,22 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/vehicle_card.dart';
+import '../services/api_service.dart';
+import '../utils/nav_helper.dart';
+import 'vehicle_detail_screen.dart';
 
-// Dummy data for search results
-final List<Map<String, String>> _allListings = [
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1552519507-da3b142148bb?w=400'},
-  {'name': 'Scooter Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400'},
-  {'name': 'Bike Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'},
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400'},
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1617886903355-9354bb57751f?w=400'},
-  {'name': 'Rickshaw Model', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1622185135505-2d795003994a?w=400'},
-  {'name': 'Scooter Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400'},
-  {'name': 'Bike Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'},
-  {'name': 'Rickshaw Model', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1622185135505-2d795003994a?w=400'},
-  {'name': 'Car Name', 'price': '₹ 12,00,000', 'km': 'Total km', 'location': 'location', 'image': 'https://images.unsplash.com/photo-1552519507-da3b142148bb?w=400'},
-];
 
 class SearchScreen extends StatefulWidget {
+  /// If not null, the screen opens with a pre-filled text search.
   final String? initialQuery;
 
-  const SearchScreen({super.key, this.initialQuery});
+  /// If not null, the screen opens filtered by this category (exact match).
+  final String? initialCategory;
+
+  const SearchScreen({super.key, this.initialQuery, this.initialCategory});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -29,34 +24,88 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   late TextEditingController _searchController;
-  bool _hasSearched = false;
-  String _query = '';
-  final String _city = 'Kerala';
   NavTab _currentTab = NavTab.home;
+
+  List<dynamic> _listings = [];
+  bool _isLoading = false;
+  bool _hasFetched = false;
+  String? _error;
+
+  /// Current active keyword query
+  String _query = '';
+
+  /// Current active category filter (null = no filter)
+  String? _activeCategory;
+
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
-    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+
+    if (widget.initialCategory != null) {
+      // Category tap: immediately filter by category
+      _activeCategory = widget.initialCategory;
+      _fetch();
+    } else if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      // Search from home
       _query = widget.initialQuery!;
-      _hasSearched = true;
+      _fetch();
     }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
-  void _doSearch(String value) {
-    if (value.trim().isEmpty) return;
+  /// Calls the backend with current _query and/or _activeCategory
+  Future<void> _fetch() async {
     setState(() {
-      _query = value.trim();
-      _hasSearched = true;
+      _isLoading = true;
+      _error = null;
+      _hasFetched = true;
     });
-    FocusScope.of(context).unfocus();
+    try {
+      final data = await ApiService.getListings(
+        search: _query.isNotEmpty ? _query : null,
+        category: _activeCategory,
+      );
+      if (mounted) {
+        setState(() {
+          _listings = data['listings'] ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Could not load results. Check your connection.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _onSearchSubmit(String value) {
+    final trimmed = value.trim();
+    if (trimmed == _query) return;
+    setState(() {
+      _query = trimmed;
+      _activeCategory = null; // clear category filter when typing a search
+    });
+    if (trimmed.isNotEmpty) _fetch();
+  }
+
+  /// Label shown in the top bar / subtitle
+  String get _displayLabel {
+    if (_activeCategory != null && _query.isEmpty) return _activeCategory!;
+    if (_query.isNotEmpty && _activeCategory != null) return '$_query in $_activeCategory';
+    if (_query.isNotEmpty) return _query;
+    return '';
   }
 
   @override
@@ -67,15 +116,17 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: [
             _buildTopBar(),
+            // Active category chip
+            if (_activeCategory != null) _buildCategoryChip(),
             Expanded(
-              child: _hasSearched ? _buildResults() : _buildEmpty(),
+              child: _hasFetched ? _buildBody() : _buildHint(),
             ),
           ],
         ),
       ),
       bottomNavigationBar: EvBottomNavBar(
         currentTab: _currentTab,
-        onTap: (tab) => setState(() => _currentTab = tab),
+        onTap: (tab) => handleNavTap(context, tab, _currentTab),
       ),
     );
   }
@@ -173,36 +224,23 @@ class _SearchScreenState extends State<SearchScreen> {
                           controller: _searchController,
                           style: GoogleFonts.poppins(color: AppColors.white, fontSize: 13),
                           decoration: InputDecoration(
-                            hintText: _hasSearched
-                                ? '"$_query" in $_city'
-                                : 'Find cars, bikes, cycles...',
+                            hintText: _activeCategory != null
+                                ? 'Search in ${_activeCategory!}...'
+                                : 'Find cars, bikes, scooters...',
                             hintStyle: GoogleFonts.poppins(color: AppColors.grey, fontSize: 13),
                             border: InputBorder.none,
                           ),
-                          onSubmitted: _doSearch,
+                          onSubmitted: _onSearchSubmit,
                           textInputAction: TextInputAction.search,
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _doSearch(_searchController.text),
+                        onTap: () => _onSearchSubmit(_searchController.text),
                         child: const Icon(Icons.search, color: AppColors.grey, size: 20),
                       ),
                     ],
                   ),
                 ),
-              ),
-
-              // Filter button
-              Container(
-                width: 44,
-                height: 44,
-                margin: const EdgeInsets.only(left: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderColor),
-                ),
-                child: const Icon(Icons.tune_rounded, color: AppColors.white, size: 20),
               ),
             ],
           ),
@@ -212,7 +250,49 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildCategoryChip() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.green.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.green, width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _activeCategory!,
+                  style: GoogleFonts.poppins(
+                    color: AppColors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _activeCategory = null;
+                      _hasFetched = false;
+                      _listings = [];
+                    });
+                  },
+                  child: const Icon(Icons.close, color: AppColors.green, size: 14),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHint() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -233,22 +313,74 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildResults() {
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.green),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.wifi_off, color: AppColors.grey, size: 48),
+            const SizedBox(height: 12),
+            Text(_error!, style: GoogleFonts.poppins(color: AppColors.grey)),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: _fetch,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.green,
+                side: const BorderSide(color: AppColors.green),
+              ),
+              child: Text('Retry', style: GoogleFonts.poppins()),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_listings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.inbox_outlined, color: AppColors.grey, size: 56),
+            const SizedBox(height: 12),
+            Text(
+              'No listings found',
+              style: GoogleFonts.poppins(color: AppColors.white, fontSize: 15),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _displayLabel.isNotEmpty
+                  ? 'for "$_displayLabel"'
+                  : 'Try a different keyword',
+              style: GoogleFonts.poppins(color: AppColors.grey, fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 12),
               child: Text(
-                'Showing results for "$_query"',
+                '${_listings.length} result${_listings.length == 1 ? '' : 's'}'
+                '${_displayLabel.isNotEmpty ? ' for "$_displayLabel"' : ''}',
                 style: GoogleFonts.poppins(
-                  color: AppColors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  color: AppColors.grey,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
@@ -261,15 +393,24 @@ class _SearchScreenState extends State<SearchScreen> {
                 crossAxisSpacing: 10,
                 childAspectRatio: 0.68,
               ),
-              itemCount: _allListings.length,
+              itemCount: _listings.length,
               itemBuilder: (context, index) {
-                final item = _allListings[index];
+                final item = _listings[index] as Map<String, dynamic>;
+                final photos = item['photoUrls'] as List? ?? [];
                 return VehicleCard(
-                  name: item['name']!,
-                  price: item['price']!,
-                  km: item['km']!,
-                  location: item['location']!,
-                  imageUrl: item['image']!,
+                  name: '${item['brand'] ?? ''} ${item['model'] ?? ''}'.trim(),
+                  price: '₹ ${item['price'] ?? ''}',
+                  km: '${item['kmDriven'] ?? '--'} km',
+                  location: item['location'] ?? '',
+                  imageUrl: photos.isNotEmpty ? photos[0] as String : '',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VehicleDetailScreen(listingId: item['_id'] as String),
+                      ),
+                    );
+                  },
                 );
               },
             ),

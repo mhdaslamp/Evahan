@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/vehicle_card.dart';
 import '../services/api_service.dart';
 import '../utils/nav_helper.dart';
+import 'vehicle_detail_screen.dart';
 
 class MyAdsScreen extends StatefulWidget {
   const MyAdsScreen({super.key});
@@ -137,32 +138,60 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
           final item = _listings[i] as Map<String, dynamic>;
           final photos = item['photoUrls'] as List? ?? [];
           final status = item['status'] as String? ?? 'active';
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderColor, width: 0.8),
-            ),
-            child: Row(
-              children: [
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VehicleDetailScreen(listingId: item['_id'] as String),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderColor, width: 0.8),
+              ),
+              child: Row(
+                children: [
                 // Photo
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
-                  child: photos.isNotEmpty
-                      ? Image.network(
-                          photos[0] as String,
-                          width: 110, height: 90, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 110, height: 90,
+                  child: (photos.isNotEmpty && (photos[0] as String).isNotEmpty)
+                      ? CachedNetworkImage(
+                          imageUrl: photos[0] as String,
+                          width: 110,
+                          height: 90,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 110,
+                            height: 90,
+                            color: const Color(0xFF1A2F3D),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.green,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 110,
+                            height: 90,
                             color: const Color(0xFF1A2F3D),
                             child: const Icon(Icons.electric_car_outlined,
                                 color: AppColors.green, size: 36),
                           ),
                         )
                       : Container(
-                          width: 110, height: 90,
+                          width: 110,
+                          height: 90,
                           color: const Color(0xFF1A2F3D),
                           child: const Icon(Icons.electric_car_outlined,
                               color: AppColors.green, size: 36),
@@ -221,7 +250,8 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                 ),
               ],
             ),
-          );
+          ),
+        );
         },
       ),
     );

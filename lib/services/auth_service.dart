@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'socket_service.dart';
+import 'api_service.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -109,6 +111,10 @@ class AuthService {
   }
 
   static Future<void> signOut() async {
+    // Disconnect the socket BEFORE clearing tokens so the
+    // singleton doesn't carry the old user's identity on next login.
+    SocketService().disconnect();
+    await ApiService.clearToken();
     try {
       await _googleSignIn.signOut();
     } catch (_) {}

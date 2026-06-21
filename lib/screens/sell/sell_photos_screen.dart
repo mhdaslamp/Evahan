@@ -60,7 +60,7 @@ class _SellPhotosScreenState extends State<SellPhotosScreen> {
     final extra = _photos.length > 4 ? _photos.length - 4 : 0;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -74,7 +74,7 @@ class _SellPhotosScreenState extends State<SellPhotosScreen> {
                     Text(
                       'Upload Your Vehicle Picture',
                       style: GoogleFonts.poppins(
-                          color: Colors.black87,
+                          color: AppColors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w500),
                     ),
@@ -88,18 +88,18 @@ class _SellPhotosScreenState extends State<SellPhotosScreen> {
                         height: 110,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.black26, width: 1.2),
+                          border: Border.all(color: AppColors.borderColor, width: 1.2),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(Icons.cloud_upload_outlined,
-                                color: Colors.black38, size: 30),
+                                color: AppColors.grey, size: 30),
                             const SizedBox(height: 6),
                             Text(
                               'Choose a file & drop it here.',
                               style: GoogleFonts.poppins(
-                                  color: Colors.black45, fontSize: 12),
+                                  color: AppColors.grey, fontSize: 12),
                             ),
                             Text(
                               'Click to Browse',
@@ -138,9 +138,9 @@ class _SellPhotosScreenState extends State<SellPhotosScreen> {
                                   File(xfile.path),
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Container(
-                                    color: Colors.grey[200],
+                                    color: AppColors.cardBg,
                                     child: const Icon(Icons.broken_image,
-                                        color: Colors.grey),
+                                        color: AppColors.grey),
                                   ),
                                 ),
                               ),
@@ -186,7 +186,7 @@ class _SellPhotosScreenState extends State<SellPhotosScreen> {
                       Text(
                         '${_photos.length}/$_maxPhotos photo(s) selected',
                         style: GoogleFonts.poppins(
-                            color: Colors.black38, fontSize: 11),
+                            color: AppColors.grey, fontSize: 11),
                       ),
                     ],
                     const SizedBox(height: 32),

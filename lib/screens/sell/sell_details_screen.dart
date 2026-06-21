@@ -19,12 +19,12 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
   late TextEditingController _brandCtrl;
   late TextEditingController _modelCtrl;
   late TextEditingController _yearCtrl;
-  late TextEditingController _locationCtrl;
   late TextEditingController _kmCtrl;
   late TextEditingController _ownersCtrl;
   late TextEditingController _titleCtrl;
   late TextEditingController _priceCtrl;
   late String _transmission;
+  String _selectedLocation = '';
 
   String? _batteryCertPath;
   String? _batteryCertName; // just the filename for display
@@ -36,7 +36,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
     _brandCtrl = TextEditingController(text: d.brand);
     _modelCtrl = TextEditingController(text: d.model);
     _yearCtrl = TextEditingController(text: d.year);
-    _locationCtrl = TextEditingController(text: d.location);
+    _selectedLocation = d.location;
     _kmCtrl = TextEditingController(text: d.kmDriven);
     _ownersCtrl = TextEditingController(text: d.noOfOwners);
     _titleCtrl = TextEditingController(text: d.adTitle);
@@ -47,7 +47,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
 
   @override
   void dispose() {
-    for (final c in [_brandCtrl, _modelCtrl, _yearCtrl, _locationCtrl, _kmCtrl, _ownersCtrl, _titleCtrl, _priceCtrl]) {
+    for (final c in [_brandCtrl, _modelCtrl, _yearCtrl, _kmCtrl, _ownersCtrl, _titleCtrl, _priceCtrl]) {
       c.dispose();
     }
     super.dispose();
@@ -75,7 +75,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
       model: _modelCtrl.text.trim(),
       year: _yearCtrl.text.trim(),
       transmission: _transmission,
-      location: _locationCtrl.text.trim(),
+      location: _selectedLocation,
       kmDriven: _kmCtrl.text.trim(),
       noOfOwners: _ownersCtrl.text.trim(),
       adTitle: _titleCtrl.text.trim(),
@@ -91,7 +91,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -122,7 +122,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
                       _transmissionSelector(),
                       const SizedBox(height: 16),
 
-                      _textField('Location', _locationCtrl),
+                      _buildLocationPicker(),
                       _textField('KM Driven*', _kmCtrl, required: true, inputType: TextInputType.number),
                       _textField('No. of Owners', _ownersCtrl, inputType: TextInputType.number),
                       _textField('Price (₹)*', _priceCtrl, required: true, inputType: TextInputType.number),
@@ -133,12 +133,12 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
                         controller: _titleCtrl,
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                         maxLines: 3,
-                        style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
+                        style: GoogleFonts.poppins(color: AppColors.white, fontSize: 14),
                         decoration: InputDecoration(
                           hintText: 'Mention the key features of your item\n(eg. brand, model, age, type ..)',
-                          hintStyle: GoogleFonts.poppins(color: Colors.black38, fontSize: 12),
+                          hintStyle: GoogleFonts.poppins(color: AppColors.grey, fontSize: 12),
                           enabledBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.black26)),
+                              borderSide: BorderSide(color: AppColors.borderColor)),
                           focusedBorder: UnderlineInputBorder(
                               borderSide: BorderSide(color: AppColors.green, width: 1.5)),
                         ),
@@ -237,7 +237,130 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
     return Text(
       text,
       style: GoogleFonts.poppins(
-          color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
+          color: AppColors.white, fontSize: 13, fontWeight: FontWeight.w500),
+    );
+  }
+
+  static const _cities = [
+    'Thiruvananthapuram',
+    'Kochi',
+    'Kozhikode',
+    'Thrissur',
+    'Kannur',
+    'Kollam',
+    'Palakkad',
+    'Malappuram',
+    'Alappuzha',
+    'Kottayam',
+    'Idukki',
+    'Ernakulam',
+    'Kasaragod',
+    'Wayanad',
+    'Pathanamthitta',
+  ];
+
+  Widget _buildLocationPicker() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: GestureDetector(
+        onTap: _showLocationPicker,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Location',
+              style: GoogleFonts.poppins(color: AppColors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, color: AppColors.grey, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _selectedLocation.isEmpty ? 'Select a city' : _selectedLocation,
+                    style: GoogleFonts.poppins(
+                      color: _selectedLocation.isEmpty ? Colors.white38 : AppColors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down, color: AppColors.grey, size: 20),
+              ],
+            ),
+            const Divider(color: AppColors.borderColor, thickness: 1, height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLocationPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Select Location',
+                style: GoogleFonts.poppins(
+                  color: AppColors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _cities.length,
+              itemBuilder: (_, i) => ListTile(
+                leading: Icon(
+                  _cities[i] == _selectedLocation
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: AppColors.green,
+                  size: 20,
+                ),
+                title: Text(
+                  _cities[i],
+                  style: GoogleFonts.poppins(
+                    color: AppColors.white,
+                    fontSize: 14,
+                    fontWeight: _cities[i] == _selectedLocation
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                  ),
+                ),
+                onTap: () {
+                  setState(() => _selectedLocation = _cities[i]);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 
@@ -258,12 +381,12 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
             : null,
-        style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
+        style: GoogleFonts.poppins(color: AppColors.white, fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.poppins(color: Colors.black54, fontSize: 13),
+          labelStyle: GoogleFonts.poppins(color: AppColors.grey, fontSize: 13),
           enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.black26)),
+              borderSide: BorderSide(color: AppColors.borderColor)),
           focusedBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: AppColors.green, width: 1.5)),
           errorBorder: const UnderlineInputBorder(
@@ -289,14 +412,14 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
               color: selected ? AppColors.green : Colors.transparent,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: selected ? AppColors.green : Colors.black38,
+                color: selected ? AppColors.green : AppColors.borderColor,
                 width: 1.4,
               ),
             ),
             child: Text(
               t,
               style: GoogleFonts.poppins(
-                color: selected ? Colors.black : Colors.black54,
+                color: selected ? Colors.black : AppColors.grey,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -316,8 +439,8 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
         height: 100,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.black26, width: 1.2),
-          color: filePath != null ? const Color(0xFFF0FFF0) : Colors.transparent,
+          border: Border.all(color: AppColors.borderColor, width: 1.2),
+          color: filePath != null ? AppColors.cardBg : Colors.transparent,
         ),
         child: filePath != null
             ? Row(
@@ -325,7 +448,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
                 children: [
                   Icon(
                     isPdf ? Icons.picture_as_pdf : Icons.image_outlined,
-                    color: isPdf ? Colors.red : Colors.green,
+                    color: isPdf ? Colors.red : AppColors.green,
                     size: 32,
                   ),
                   const SizedBox(width: 10),
@@ -337,7 +460,7 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
                         Text(
                           fileName ?? 'File selected',
                           style: GoogleFonts.poppins(
-                              color: Colors.black87,
+                              color: AppColors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w500),
                           maxLines: 2,
@@ -359,12 +482,12 @@ class _SellDetailsScreenState extends State<SellDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.cloud_upload_outlined,
-                      color: Colors.black38, size: 30),
+                      color: AppColors.grey, size: 30),
                   const SizedBox(height: 6),
                   Text(
                     'Choose a file & drop it here.',
                     style: GoogleFonts.poppins(
-                        color: Colors.black45, fontSize: 12),
+                        color: AppColors.grey, fontSize: 12),
                   ),
                   Text(
                     'Click to Browse  (PDF / Image)',

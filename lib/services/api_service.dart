@@ -1,14 +1,50 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Change this to your machine's local IP when testing on a physical device.
 /// Use http://10.0.2.2:5000 for Android emulator.
 /// Use http://192.168.x.x:5000 for physical device (your PC's LAN IP).
-const String _baseUrl = 'http://192.168.1.16:5000/api';
+const String _baseUrl = 'https://evahan.onrender.com/api';
 
 class ApiService {
   static final _storage = const FlutterSecureStorage();
   static const _tokenKey = 'jwt_token';
+  static const _userIdKey = 'user_id';
+  static const _listingsCacheKey = 'cached_listings';
+  static String? _cachedUserId;
+
+  // ── Cache Getters ────────────────────────────────────────
+
+  static Future<Map<String, dynamic>?> getCachedListings() async {
+    try {
+      final jsonStr = await _storage.read(key: _listingsCacheKey);
+      if (jsonStr != null) {
+        return jsonDecode(jsonStr) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getCachedListing(String id) async {
+    try {
+      final jsonStr = await _storage.read(key: 'cached_listing_$id');
+      if (jsonStr != null) {
+        return jsonDecode(jsonStr) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getCachedUserChats(String role) async {
+    try {
+      final jsonStr = await _storage.read(key: 'cached_chats_$role');
+      if (jsonStr != null) {
+        return jsonDecode(jsonStr) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
 
   static Dio _buildDio({String? token}) {
     final dio = Dio(BaseOptions(
@@ -31,7 +67,63 @@ class ApiService {
 
   static Future<String?> getToken() => _storage.read(key: _tokenKey);
 
-  static Future<void> clearToken() => _storage.delete(key: _tokenKey);
+  static Future<void> saveUserId(String userId) async {
+    _cachedUserId = userId;
+    await _storage.write(key: _userIdKey, value: userId);
+  }
+
+  static Future<String?> getUserId() => _storage.read(key: _userIdKey);
+
+  static Future<void> clearToken() async {
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _userIdKey);
+    _cachedUserId = null;
+  }
+
+  static String? _decodeUserIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return null;
+      final payload = parts[1];
+      final normalized = base64.normalize(payload);
+      final decodedJson = utf8.decode(base64Decode(normalized));
+      final map = jsonDecode(decodedJson) as Map<String, dynamic>;
+      return map['id']?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<String?> getMyUserId() async {
+    if (_cachedUserId != null) return _cachedUserId;
+
+    // Try decoding from JWT token first for 100% offline reliability
+    final token = await getToken();
+    if (token != null) {
+      final idFromToken = _decodeUserIdFromToken(token);
+      if (idFromToken != null) {
+        _cachedUserId = idFromToken;
+        await saveUserId(idFromToken);
+        return idFromToken;
+      }
+    }
+
+    final cached = await getUserId();
+    if (cached != null) {
+      _cachedUserId = cached;
+      return cached;
+    }
+    try {
+      final data = await getMe();
+      final id = data['user']?['_id'] ?? data['user']?['id'];
+      if (id != null) {
+        final idStr = id as String;
+        await saveUserId(idStr);
+        return idStr;
+      }
+    } catch (_) {}
+    return null;
+  }
 
   // ── Auth ─────────────────────────────────────────────────
 
@@ -43,6 +135,12 @@ class ApiService {
     final res = await dio.post('/auth/login');
     final jwt = res.data['token'] as String;
     await saveToken(jwt); // persist JWT
+    try {
+      final id = res.data['user']?['id'] ?? res.data['user']?['_id'];
+      if (id != null) {
+        await saveUserId(id as String);
+      }
+    } catch (_) {}
     return res.data as Map<String, dynamic>;
   }
 
@@ -57,14 +155,31 @@ class ApiService {
     String? name,
     String? email,
     String? about,
+    String? profilePicPath,
   }) async {
     final token = await getToken();
     final dio = _buildDio(token: token);
-    final res = await dio.put('/auth/profile', data: {
-      if (name != null) 'name': name,
-      if (email != null) 'email': email,
-      if (about != null) 'about': about,
-    });
+    
+    dynamic data;
+    if (profilePicPath != null) {
+      data = FormData.fromMap({
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
+        if (about != null) 'about': about,
+        'photo': await MultipartFile.fromFile(
+          profilePicPath,
+          filename: 'profile_pic.jpg',
+        ),
+      });
+    } else {
+      data = {
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
+        if (about != null) 'about': about,
+      };
+    }
+
+    final res = await dio.put('/auth/profile', data: data);
     return res.data as Map<String, dynamic>;
   }
 
@@ -81,6 +196,14 @@ class ApiService {
       if (search != null) 'search': search,
       'page': page,
     });
+    
+    // Cache the first page of the default feed locally
+    if (category == null && search == null && page == 1) {
+      try {
+        await _storage.write(key: _listingsCacheKey, value: jsonEncode(res.data));
+      } catch (_) {}
+    }
+    
     return res.data as Map<String, dynamic>;
   }
 
@@ -94,6 +217,9 @@ class ApiService {
   static Future<Map<String, dynamic>> getListing(String id) async {
     final dio = _buildDio();
     final res = await dio.get('/listings/$id');
+    try {
+      await _storage.write(key: 'cached_listing_$id', value: jsonEncode(res.data));
+    } catch (_) {}
     return res.data as Map<String, dynamic>;
   }
 
@@ -125,6 +251,9 @@ class ApiService {
     final token = await getToken();
     final dio = _buildDio(token: token);
     final res = await dio.get('/chats', queryParameters: {'role': role});
+    try {
+      await _storage.write(key: 'cached_chats_$role', value: jsonEncode(res.data));
+    } catch (_) {}
     return res.data as Map<String, dynamic>;
   }
 

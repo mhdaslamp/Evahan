@@ -18,7 +18,7 @@ class SellCategoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -120,7 +120,7 @@ class SellCategoryScreen extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12, width: 0.5),
+              border: Border.all(color: AppColors.borderColor, width: 0.5),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -129,18 +129,18 @@ class SellCategoryScreen extends StatelessWidget {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: AppColors.cardBg,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.black26, width: 1),
+                    border: Border.all(color: AppColors.borderColor, width: 1),
                   ),
                   child: Icon(cat['icon'] as IconData,
-                      color: Colors.white, size: 36),
+                      color: AppColors.green, size: 36),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   cat['label'] as String,
                   style: GoogleFonts.poppins(
-                      color: Colors.black87,
+                      color: AppColors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500),
                 ),

@@ -12,7 +12,20 @@
           "package_name": "com.example.evahan"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1052777881118-n47qg55gteailgcjhj34tppfqde9prfo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.evahan",
+            "certificate_hash": "94468508d2c68ba4d56165dfe24a25248cfa5731"
+          }
+        },
+        {
+          "client_id": "1052777881118-1dmhnf2oitcv6b20u0pmhbbl1f6l3juh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA58kzWnuQFFPasqIycJazw26dwZzXy5eo"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1052777881118-1dmhnf2oitcv6b20u0pmhbbl1f6l3juh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1052777881118-o038b3uc5pdns3uci6q1fdgou64dim7e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.evahan"
+              }
+            }
+          ]
         }
       }
     }

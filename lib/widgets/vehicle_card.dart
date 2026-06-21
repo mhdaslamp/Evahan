@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 
 /// A single EV vehicle listing card used in home, search results, etc.
@@ -47,15 +48,34 @@ class _VehicleCardState extends State<VehicleCard> {
               children: [
                 AspectRatio(
                   aspectRatio: 1.2,
-                  child: Image.network(
-                    widget.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFF1A2F3D),
-                      child: const Icon(Icons.electric_car_outlined,
-                          color: AppColors.green, size: 40),
-                    ),
-                  ),
+                  child: widget.imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: widget.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: const Color(0xFF1A2F3D),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.green,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: const Color(0xFF1A2F3D),
+                            child: const Icon(Icons.electric_car_outlined,
+                                color: AppColors.green, size: 40),
+                          ),
+                        )
+                      : Container(
+                          color: const Color(0xFF1A2F3D),
+                          child: const Icon(Icons.electric_car_outlined,
+                              color: AppColors.green, size: 40),
+                        ),
                 ),
                 Positioned(
                   top: 8,

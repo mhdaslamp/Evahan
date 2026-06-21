@@ -62,3 +62,6 @@ backend/.env
 # Local keystore files
 *.keystore
 *.jks
+
+# Firebase CLI
+.firebase/

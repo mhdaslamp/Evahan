@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -93,6 +94,16 @@ class _OtpScreenState extends State<OtpScreen> {
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
       );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        _showError('Cannot reach server. Check your network or backend IP.');
+      } else {
+        _showError('Server error (${e.response?.statusCode ?? 'unknown'}). Please try again.');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);

@@ -8,6 +8,8 @@ import '../screens/sell/sell_category_screen.dart';
 
 /// Call this from any screen's EvBottomNavBar.onTap handler.
 void handleNavTap(BuildContext context, NavTab tab, NavTab currentTab) {
+  if (tab == currentTab) return;
+
   switch (tab) {
     case NavTab.home:
       Navigator.pushAndRemoveUntil(
@@ -17,8 +19,13 @@ void handleNavTap(BuildContext context, NavTab tab, NavTab currentTab) {
       );
       break;
     case NavTab.chats:
-      if (currentTab != NavTab.chats) {
+      if (currentTab == NavTab.home) {
         Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatsListScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ChatsListScreen()),
         );
@@ -31,16 +38,26 @@ void handleNavTap(BuildContext context, NavTab tab, NavTab currentTab) {
       );
       break;
     case NavTab.myAds:
-      if (currentTab != NavTab.myAds) {
+      if (currentTab == NavTab.home) {
         Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MyAdsScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const MyAdsScreen()),
         );
       }
       break;
     case NavTab.profile:
-      if (currentTab != NavTab.profile) {
+      if (currentTab == NavTab.home) {
         Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ProfileScreen()),
         );

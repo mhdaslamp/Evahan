@@ -50,7 +50,22 @@ const getUserChats = async (req, res) => {
         .populate('seller', 'name phone profilePicUrl')
         .populate('listing', 'adTitle price photoUrls');
 
-    res.json({ chats });
+    // Count unread messages for each chat
+    const chatsWithUnread = await Promise.all(
+        chats.map(async (chat) => {
+            const unreadCount = await Message.countDocuments({
+                chat: chat._id,
+                sender: { $ne: req.user._id },
+                isRead: false,
+            });
+            return {
+                ...chat.toObject(),
+                unreadCount,
+            };
+        })
+    );
+
+    res.json({ chats: chatsWithUnread });
 };
 
 /**

@@ -45,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             _buildTopBar(),
-            _buildCompletionBanner(),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.green))
@@ -75,46 +74,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       color: AppColors.background,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // EVAHAN Logo
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'EV',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.green,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                TextSpan(
-                  text: 'AHAN',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Hamburger
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(
-              3,
-              (i) => Container(
-                width: 22,
-                height: 2.5,
-                margin: const EdgeInsets.symmetric(vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
+          Image.asset(
+            'assets/images/evahan_logo.png',
+            height: 24,
+            fit: BoxFit.contain,
           ),
         ],
       ),
@@ -140,39 +104,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildCompletionBanner() {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
-      ),
-      child: Container(
-        width: double.infinity,
-        color: AppColors.green,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                'You have 3 steps left. Complete your profile!',
-                style: GoogleFonts.poppins(
-                  color: Colors.black,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.black, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildProfileInfo() {
     final name = _user?['name'] as String? ?? 'Name';
-    final emailVerified = _user?['emailVerified'] as bool? ?? false;
-    final phoneVerified = _user?['phoneVerified'] as bool? ?? false;
     final memberSince = _user?['createdAt'] != null
         ? _formatDate(_user!['createdAt'] as String)
         : 'Recently';
@@ -289,17 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              if (emailVerified)
-                _verifiedIcon(Icons.mail_outline),
-              if (emailVerified) const SizedBox(width: 10),
-              if (phoneVerified)
-                _verifiedIcon(Icons.phone_outlined),
-              // Show default icons if not loaded yet
-              if (!emailVerified && !phoneVerified) ...[
-                _verifiedIcon(Icons.mail_outline),
-                const SizedBox(width: 10),
-                _verifiedIcon(Icons.phone_outlined),
-              ],
+              _verifiedIcon(Icons.mail_outline),
             ],
           ),
           const SizedBox(height: 20),
