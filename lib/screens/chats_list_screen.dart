@@ -245,7 +245,11 @@ class _ChatsListScreenState extends State<ChatsListScreen>
         ),
         itemBuilder: (context, index) {
           final chat = chats[index] as Map<String, dynamic>;
-          return _ChatTile(chat: chat, isBuyerTab: isBuyerTab);
+          return _ChatTile(
+            chat: chat,
+            isBuyerTab: isBuyerTab,
+            onRefresh: _fetchChats,
+          );
         },
       ),
     );
@@ -255,10 +259,12 @@ class _ChatsListScreenState extends State<ChatsListScreen>
 class _ChatTile extends StatelessWidget {
   final Map<String, dynamic> chat;
   final bool isBuyerTab;
+  final VoidCallback onRefresh;
 
   const _ChatTile({
     required this.chat,
     required this.isBuyerTab,
+    required this.onRefresh,
   });
 
   String _formatLastTime(String? isoString) {
@@ -313,6 +319,7 @@ class _ChatTile extends StatelessWidget {
             ),
           ),
         );
+        onRefresh();
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

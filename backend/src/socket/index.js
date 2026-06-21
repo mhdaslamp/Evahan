@@ -37,10 +37,15 @@ const initSocket = (io) => {
             if (!text?.trim()) return;
 
             try {
+                // Check if both users are actively in the chat room
+                const room = io.sockets.adapter.rooms.get(chatId);
+                const isRead = room && room.size > 1;
+
                 const message = await Message.create({
                     chat: chatId,
                     sender: socket.user._id,
                     text: text.trim(),
+                    isRead: isRead ? true : false,
                 });
 
                 await Chat.findByIdAndUpdate(chatId, {
