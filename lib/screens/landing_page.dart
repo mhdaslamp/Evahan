@@ -1,10 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import 'phone_input_screen.dart';
+import '../services/auth_service.dart';
+import '../services/api_service.dart';
+import 'home_screen.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  bool _isLoading = false;
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final userCredential = await AuthService.signInWithGoogle();
+      if (userCredential == null) {
+        // User cancelled the sign-in flow
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Get Firebase ID Token
+      final idToken = await userCredential.user?.getIdToken();
+      if (idToken == null) {
+        throw Exception("Failed to retrieve ID Token");
+      }
+
+      // Exchange with backend for JWT
+      await ApiService.loginWithFirebaseToken(idToken);
+
+      if (!mounted) return;
+
+      // Navigate to Home
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Sign in failed. Check network/setup. Error: $e',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +134,53 @@ class LandingPage extends StatelessWidget {
 
               const Spacer(flex: 2),
 
+              /// CONTINUE WITH GOOGLE
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: _isLoading ? null : _handleGoogleSignIn,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.black,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/google.png',
+                              height: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Continue with Google',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+
+              /*
+              const SizedBox(height: 14),
+
               /// CONTINUE WITH PHONE
               SizedBox(
                 width: double.infinity,
@@ -134,6 +237,7 @@ class LandingPage extends StatelessWidget {
                   ),
                 ),
               ),
+              */
 
               const SizedBox(height: 40),
             ],

@@ -44,3 +44,21 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ── Sensitive credentials — DO NOT commit ──────────────────────────────
+# Firebase Android config (contains API keys & OAuth client IDs)
+android/app/google-services.json
+
+# Firebase iOS config
+ios/Runner/GoogleService-Info.plist
+
+# Firebase Admin SDK service account key
+**/serviceAccountKey.json
+backend/serviceAccountKey.json
+
+# Backend environment variables
+backend/.env
+
+# Local keystore files
+*.keystore
+*.jks

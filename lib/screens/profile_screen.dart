@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../utils/nav_helper.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import 'profile_edit_screen.dart';
+import 'terms_conditions_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'landing_page.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -188,7 +193,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CircleAvatar(
                 radius: 44,
                 backgroundColor: const Color(0xFFD9D9D9),
-                child: const Icon(Icons.person, color: Colors.white, size: 40),
+                backgroundImage: (_user?['profilePicUrl'] as String? ?? '').isNotEmpty
+                    ? CachedNetworkImageProvider(_user!['profilePicUrl'] as String)
+                    : null,
+                child: (_user?['profilePicUrl'] as String? ?? '').isEmpty
+                    ? const Icon(Icons.person, color: Colors.white, size: 40)
+                    : null,
               ),
               const SizedBox(width: 20),
               Column(
@@ -202,7 +212,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  if ((_user?['phone'] as String? ?? '').isNotEmpty)
+                  if ((_user?['phone'] as String? ?? '').isNotEmpty &&
+                      !(_user?['phone'] as String? ?? '').startsWith('google_'))
                     Text(
                       _user!['phone'] as String,
                       style: GoogleFonts.poppins(
@@ -320,6 +331,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
+
+          const SizedBox(height: 24),
+          const Divider(color: AppColors.borderColor, height: 1),
+          const SizedBox(height: 12),
+
+          // Menu Options
+          _buildMenuTile(
+            icon: Icons.description_outlined,
+            title: 'Terms & Conditions',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TermsConditionsScreen()),
+              );
+            },
+          ),
+          _buildMenuTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy Policy',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+              );
+            },
+          ),
+          _buildMenuTile(
+            icon: Icons.logout_rounded,
+            title: 'Log Out',
+            titleColor: Colors.redAccent,
+            iconColor: Colors.redAccent,
+            onTap: () async {
+              await AuthService.signOut();
+              await ApiService.clearToken();
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LandingPage()),
+                (route) => false,
+              );
+            },
+          ),
         ],
       ),
     );
@@ -423,5 +475,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {
       return '';
     }
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color titleColor = AppColors.white,
+    Color iconColor = AppColors.green,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: iconColor, size: 22),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          color: titleColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: AppColors.grey, size: 20),
+      onTap: onTap,
+    );
   }
 }

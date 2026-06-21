@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../services/api_service.dart';
@@ -20,6 +23,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final String _countryCode = '+91';
   bool _isSaving = false;
   bool _isLoading = true;
+  
+  String? _profilePicUrl;
+  String? _localPhotoPath;
+  final _picker = ImagePicker();
 
   @override
   void initState() {
@@ -36,7 +43,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           _nameController.text = user['name'] as String? ?? '';
           _bioController.text = user['about'] as String? ?? '';
           _emailController.text = user['email'] as String? ?? '';
-          _phoneController.text = user['phone'] as String? ?? '';
+          final rawPhone = user['phone'] as String? ?? '';
+          _phoneController.text = rawPhone.startsWith('google_') ? '' : rawPhone;
+          _profilePicUrl = user['profilePicUrl'] as String?;
           _isLoading = false;
         });
       }
@@ -53,6 +62,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         about: _bioController.text.trim(),
+        profilePicPath: _localPhotoPath,
       );
       if (mounted) {
         setState(() => _isSaving = false);
@@ -227,6 +237,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      if (picked != null) {
+        setState(() {
+          _localPhotoPath = picked.path;
+        });
+      }
+    } catch (_) {}
+  }
+
   Widget _buildBasicInfoSection() {
     return Column(
       children: [
@@ -236,16 +257,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             // Avatar with Edit
             Column(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 42,
-                  backgroundColor: Color(0xFFD9D9D9),
-                  child: Icon(Icons.person, color: Colors.white, size: 38),
+                  backgroundColor: const Color(0xFFD9D9D9),
+                  backgroundImage: _localPhotoPath != null
+                      ? FileImage(File(_localPhotoPath!))
+                      : (_profilePicUrl != null && _profilePicUrl!.isNotEmpty
+                          ? CachedNetworkImageProvider(_profilePicUrl!) as ImageProvider
+                          : null),
+                  child: _localPhotoPath == null && (_profilePicUrl == null || _profilePicUrl!.isEmpty)
+                      ? const Icon(Icons.person, color: Colors.white, size: 38)
+                      : null,
                 ),
                 const SizedBox(height: 6),
                 GestureDetector(
-                  onTap: () {
-                    // TODO: image picker
-                  },
+                  onTap: _pickImage,
                   child: Text(
                     'Edit',
                     style: GoogleFonts.poppins(
