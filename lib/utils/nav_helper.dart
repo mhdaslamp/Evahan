@@ -5,6 +5,7 @@ import '../screens/chats_list_screen.dart';
 import '../screens/my_ads_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/sell/sell_category_screen.dart';
+import '../features/charging/screens/charging_map_screen.dart';
 
 /// Call this from any screen's EvBottomNavBar.onTap handler.
 void handleNavTap(BuildContext context, NavTab tab, NavTab currentTab) {
@@ -50,16 +51,16 @@ void handleNavTap(BuildContext context, NavTab tab, NavTab currentTab) {
         );
       }
       break;
-    case NavTab.profile:
+    case NavTab.evMap:
       if (currentTab == NavTab.home) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          MaterialPageRoute(builder: (_) => const ChargingMapScreen()),
         );
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          MaterialPageRoute(builder: (_) => const ChargingMapScreen()),
         );
       }
       break;

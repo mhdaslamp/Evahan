@@ -4,9 +4,12 @@ import '../theme/app_theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/vehicle_card.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../utils/nav_helper.dart';
 import 'search_screen.dart';
 import 'vehicle_detail_screen.dart';
+import '../features/charging/screens/charging_map_screen.dart';
+import 'profile_screen.dart';
 
 
 
@@ -15,7 +18,7 @@ final List<Map<String, dynamic>> _categories = [
   {'label': 'Bikes', 'icon': Icons.two_wheeler_outlined},
   {'label': 'Scooters', 'icon': Icons.electric_moped_outlined},
   {'label': 'Bicycles', 'icon': Icons.pedal_bike_outlined},
-  {'label': 'Rickshaw', 'icon': Icons.airport_shuttle_outlined},
+  {'label': 'Rickshaw', 'icon': Icons.electric_rickshaw},
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -38,6 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadCachedListings();
     _fetchListings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().requestPermission();
+    });
   }
 
   Future<void> _loadCachedListings() async {
@@ -92,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildSearchBar(),
                     const SizedBox(height: 20),
                     _buildCategoriesSection(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     _buildRecommendationsSection(),
                     const SizedBox(height: 24),
                   ],
@@ -119,6 +125,16 @@ class _HomeScreenState extends State<HomeScreen> {
             'assets/images/evahan_logo.png',
             height: 24,
             fit: BoxFit.contain,
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+            child: const Icon(Icons.person_outline_rounded, color: AppColors.white, size: 26),
           ),
         ],
       ),
@@ -266,9 +282,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              const Icon(Icons.favorite_border, color: AppColors.grey, size: 20),
-              const SizedBox(width: 12),
-              const Icon(Icons.notifications_none_rounded, color: AppColors.grey, size: 20),
             ],
           ),
         ),

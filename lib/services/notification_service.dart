@@ -10,7 +10,7 @@ class NotificationService {
 
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -19,7 +19,9 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
     );
+  }
 
+  Future<void> requestPermission() async {
     // Request notifications permission for Android 13+
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<

@@ -28,7 +28,7 @@ class SocketService {
 
     _connectedToken = token;
     socket = IO.io(
-      'https://evahan.onrender.com',
+      'https://evahan-backend.onrender.com',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .setAuth({'token': token})

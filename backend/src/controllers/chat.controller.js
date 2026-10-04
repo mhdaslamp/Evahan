@@ -1,6 +1,7 @@
 const Chat = require('../models/Chat');
 const Message = require('../models/Message');
 const Listing = require('../models/Listing');
+const mongoose = require('mongoose');
 
 /**
  * POST /api/chats
@@ -19,7 +20,7 @@ const getOrCreateChat = async (req, res) => {
     }
 
     // Upsert chat — one per (listing, buyer) pair
-    let chat = await Chat.findOne({ listing: listingId, buyer: buyerId });
+    let chat = await Chat.findOne({ listing: new mongoose.Types.ObjectId(listingId), buyer: buyerId });
     if (!chat) {
         chat = await Chat.create({
             listing: listingId,
@@ -75,10 +76,13 @@ const getUserChats = async (req, res) => {
 const getMessages = async (req, res) => {
     const { page = 1, limit = 50 } = req.query;
     const messages = await Message.find({ chat: req.params.chatId })
-        .sort({ createdAt: 1 })
+        .sort({ createdAt: -1 }) // Get newest first
         .skip((page - 1) * limit)
         .limit(Number(limit))
         .populate('sender', 'name profilePicUrl');
+
+    // Reverse so the frontend gets them in chronological order (oldest -> newest for UI)
+    messages.reverse();
 
     // Mark as read
     await Message.updateMany(

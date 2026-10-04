@@ -5,7 +5,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Change this to your machine's local IP when testing on a physical device.
 /// Use http://10.0.2.2:5000 for Android emulator.
 /// Use http://192.168.x.x:5000 for physical device (your PC's LAN IP).
-const String _baseUrl = 'https://evahan.onrender.com/api';
+/// Use http://localhost:5000 for USB with adb reverse.
+const String _baseUrl = 'https://evahan-backend.onrender.com/api';
 
 class ApiService {
   static final _storage = const FlutterSecureStorage();

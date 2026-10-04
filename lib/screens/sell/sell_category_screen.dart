@@ -42,37 +42,10 @@ class SellCategoryScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              RichText(
-                text: TextSpan(children: [
-                  TextSpan(
-                    text: 'EV',
-                    style: GoogleFonts.poppins(
-                        color: AppColors.green,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800),
-                  ),
-                  TextSpan(
-                    text: 'AHAN',
-                    style: GoogleFonts.poppins(
-                        color: AppColors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800),
-                  ),
-                ]),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(
-                  3,
-                  (i) => Container(
-                    width: 22,
-                    height: 2.5,
-                    margin: const EdgeInsets.symmetric(vertical: 2),
-                    decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(4)),
-                  ),
-                ),
+              Image.asset(
+                'assets/images/evahan_logo.png',
+                height: 24,
+                fit: BoxFit.contain,
               ),
             ],
           ),

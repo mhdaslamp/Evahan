@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
-enum NavTab { home, chats, sell, myAds, profile }
+enum NavTab { home, chats, sell, myAds, evMap }
 
 class EvBottomNavBar extends StatelessWidget {
   final NavTab currentTab;
@@ -35,7 +35,7 @@ class EvBottomNavBar extends StatelessWidget {
               _NavItem(icon: Icons.chat_bubble_outline_rounded, label: 'CHATS', tab: NavTab.chats, current: currentTab, onTap: onTap),
               const SizedBox(width: 60), // space for center FAB
               _NavItem(icon: Icons.article_outlined, label: 'MY ADS', tab: NavTab.myAds, current: currentTab, onTap: onTap),
-              _NavItem(icon: Icons.person_outline_rounded, label: 'PROFILE', tab: NavTab.profile, current: currentTab, onTap: onTap),
+              _NavItem(icon: Icons.map_outlined, label: 'EV MAP', tab: NavTab.evMap, current: currentTab, onTap: onTap),
             ],
           ),
 

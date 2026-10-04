@@ -64,6 +64,13 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_local_notifications: ^20.1.0
 
+  # EV Charging Station Finder
+  geolocator: ^13.0.1           # GPS location + permission handling
+  url_launcher: ^6.3.0          # Open Google Maps navigation, phone, website
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  flutter_dotenv: ^6.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -78,6 +85,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+    - .env
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

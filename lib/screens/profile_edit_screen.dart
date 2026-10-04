@@ -135,10 +135,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: EvBottomNavBar(
-        currentTab: NavTab.profile,
-        onTap: (_) {},
-      ),
     );
   }
 

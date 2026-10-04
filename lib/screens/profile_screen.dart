@@ -62,10 +62,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: EvBottomNavBar(
-        currentTab: NavTab.profile,
-        onTap: (tab) => handleNavTap(context, tab, NavTab.profile),
-      ),
     );
   }
 
@@ -91,14 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: const Icon(Icons.arrow_back, color: AppColors.white, size: 22),
-          ),
-          GestureDetector(
-            onTap: () {},
-            child: const Icon(Icons.share_outlined, color: AppColors.white, size: 22),
-          ),
+          const Spacer(),
         ],
       ),
     );
@@ -193,25 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Followers / Following
-          Row(
-            children: [
-              Icon(Icons.people_outline, color: AppColors.grey, size: 20),
-              const SizedBox(width: 10),
-              Text(
-                '$followers Followers',
-                style: GoogleFonts.poppins(color: AppColors.white, fontSize: 14),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text('|', style: GoogleFonts.poppins(color: AppColors.grey, fontSize: 14)),
-              ),
-              Text(
-                '$following Following',
-                style: GoogleFonts.poppins(color: AppColors.white, fontSize: 14),
-              ),
-            ],
-          ),
+
           const SizedBox(height: 14),
 
           // Verified with
